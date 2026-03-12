@@ -29,6 +29,29 @@
       color: #FFD400;
       font-weight: 700;
     }
+
+    /* Tagline banner */
+    #buildit-tagline-banner {
+      width: 100%;
+      text-align: center;
+      padding: 14px 24px 16px;
+      font-size: 14px;
+      font-family: Roobert, Raleway, "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: 0.04em;
+      background: rgba(0,0,0,0.72);
+      color: rgba(255,255,255,0.9);
+      position: relative;
+      z-index: 9998;
+      border-bottom: 1px solid rgba(255,255,0,0.15);
+    }
+    #buildit-tagline-banner strong {
+      color: #fff;
+      font-weight: 700;
+    }
+    #buildit-tagline-banner .it-yellow {
+      color: #FFD400;
+      font-weight: 700;
+    }
   </style>
 
   <script>
@@ -65,19 +88,53 @@
         }
       }
 
-      // ── 3. Inject footer credit bar ───────────────────────────────────────
+      // ── 3. Replace SVG logo with BuildIT wordmark ─────────────────────────
+      function replaceLogoSVG() {
+        var logoContainers = document.querySelectorAll('.logo a, .logo nuxt-link, .logo > a, a[href="/"] .logo, .logo');
+        logoContainers.forEach(function(el) {
+          var svg = el.querySelector('svg');
+          if (svg) {
+            var mark = document.createElement('span');
+            mark.style.cssText = 'font-family:Roobert,Raleway,"Helvetica Neue",Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:0.02em;line-height:1;white-space:nowrap;color:inherit;';
+            mark.innerHTML = 'Build<span style="color:#FFD400;font-weight:700">IT</span>';
+            svg.replaceWith(mark);
+          }
+        });
+      }
+
+      // ── 4. Inject tagline banner ───────────────────────────────────────────
+      function injectTaglineBanner() {
+        if (document.getElementById('buildit-tagline-banner')) return;
+        // Only inject on homepage
+        var isHome = window.location.pathname === '/' || window.location.pathname === '';
+        if (!isHome) return;
+        // Find the intro / hero container to append to
+        var hero = document.querySelector('#intro-container') ||
+                   document.querySelector('.intro-container') ||
+                   document.querySelector('#home') ||
+                   document.querySelector('main') ||
+                   document.body;
+        var banner = document.createElement('div');
+        banner.id = 'buildit-tagline-banner';
+        banner.innerHTML =
+          '<span style="opacity:0.6;font-size:0.85em;">by </span>' +
+          '<strong>Dron Pancholi</strong>' +
+          '<span style="margin:0 10px;opacity:0.4;">&nbsp;&mdash;&nbsp;</span>' +
+          'Crafted by Build<span class="it-yellow">IT</span>' +
+          '<span style="opacity:0.6;"> in Ahmedabad, Gujarat</span>';
+        hero.appendChild(banner);
+      }
+
+      // ── 5. Inject footer credit bar ───────────────────────────────────────
       function injectFooterCredit() {
         if (document.getElementById('buildit-footer-credit')) return;
         var bar = document.createElement('div');
         bar.id = 'buildit-footer-credit';
-        bar.innerHTML =
-          'Made by <strong>Dron Pancholi</strong>' +
-          ' &nbsp;&bull;&nbsp; ' +
-          'Crafted by Build<span class="it-yellow">IT</span> in <strong>Ahmedabad, Gujarat</strong>';
+        bar.innerHTML = 'Made by <strong>Dron Pancholi</strong>';
         document.body.appendChild(bar);
       }
 
-      // ── 4. Run all patches ────────────────────────────────────────────────
+      // ── 6. Run all patches ────────────────────────────────────────────────
       var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(m) {
           m.addedNodes.forEach(function(node) {
@@ -87,26 +144,21 @@
         });
       });
 
-      document.addEventListener('DOMContentLoaded', function() {
-        observer.observe(document.body, { childList: true, subtree: true });
+      function runAllPatches() {
         replaceMonopo(document.body);
         wrapIT(document.body);
+        replaceLogoSVG();
+        injectTaglineBanner();
         injectFooterCredit();
-        // Pass after first Nuxt render
-        setTimeout(function() {
-          replaceMonopo(document.body);
-          wrapIT(document.body);
-        }, 800);
-        // Pass after full hydration
-        setTimeout(function() {
-          replaceMonopo(document.body);
-          wrapIT(document.body);
-        }, 2500);
-        // Final pass
-        setTimeout(function() {
-          replaceMonopo(document.body);
-          wrapIT(document.body);
-        }, 5000);
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        observer.observe(document.body, { childList: true, subtree: true });
+        runAllPatches();
+        setTimeout(runAllPatches, 600);
+        setTimeout(runAllPatches, 1500);
+        setTimeout(runAllPatches, 3000);
+        setTimeout(runAllPatches, 6000);
       });
     })();
   </script>
