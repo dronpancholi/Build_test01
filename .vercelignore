@@ -1,7 +1,0 @@
-# Exclude unnecessary files from Vercel deployments
-# Ignore log files
-*.log
-# Ignore local environment variables
-.env
-# Ignore build outputs
-/build
