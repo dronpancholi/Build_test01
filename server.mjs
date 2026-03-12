@@ -4,51 +4,36 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SITE = path.join(__dirname, 'site');
 const PORT = 5173;
 
 const app = express();
 
-// Serve static files with proper MIME types
+// Set proper MIME types and CORS for all static assets
 app.use((req, res, next) => {
-  // map clean URLs to index.html for SPA routing (Nuxt handles routing in JS)
-  const url = req.path;
-  const filePath = path.join(SITE, url);
-
-  // Check if file exists
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    return next();
-  }
-  // Check with index.html
-  const indexPath = path.join(SITE, url, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-  // Fallback to root index.html for SPA routing
-  if (!url.startsWith('/_nuxt') && !url.startsWith('/media') && !url.startsWith('/polyfills') && !url.startsWith('/assets')) {
-    return res.sendFile(path.join(SITE, 'index.html'));
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const ext = path.extname(req.path).toLowerCase();
+  if (ext === '.js') res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  else if (ext === '.json') res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  else if (ext === '.css') res.setHeader('Content-Type', 'text/css; charset=utf-8');
   next();
 });
 
-app.use(express.static(SITE, {
-  setHeaders(res, filePath) {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    }
-    if (filePath.endsWith('.json')) {
-      res.setHeader('Content-Type', 'application/json');
-    }
-    // Allow fonts from any origin
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
+// Serve static files from root directory
+app.use(express.static(__dirname, {
+  index: false, // handle index manually for SPA fallback
+  dotfiles: 'ignore',
 }));
 
-// 404 fallback → index.html (SPA)
-app.use((req, res) => {
-  res.sendFile(path.join(SITE, 'index.html'));
+// SPA fallback — all non-file requests get index.html (Nuxt client-side routing)
+app.get('*', (req, res) => {
+  // If it looks like a file request but doesn't exist, still serve index.html
+  const filePath = path.join(__dirname, req.path);
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    return res.sendFile(filePath);
+  }
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ BuildIT site running at http://localhost:${PORT}`);
+  console.log(`✅ BuildIT running at http://localhost:${PORT}`);
 });
